@@ -1,0 +1,31 @@
+services:
+  eda:
+    build: .
+    restart: unless-stopped
+    env_file: .env
+    # Наружу приложение не открыто: запросы приходят только через Caddy.
+    expose:
+      - "3000"
+    volumes:
+      - eda-data:/app/data
+
+  # HTTPS: Caddy сам получает и продлевает сертификат Let's Encrypt для DOMAIN из .env.
+  caddy:
+    image: caddy:2.8
+    restart: unless-stopped
+    depends_on:
+      - eda
+    environment:
+      DOMAIN: ${DOMAIN:?Укажите DOMAIN в .env}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+
+volumes:
+  eda-data:
+  caddy-data:
+  caddy-config:
